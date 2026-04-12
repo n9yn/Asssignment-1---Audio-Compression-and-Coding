@@ -4,34 +4,6 @@ from src.encoder import encode_audio
 from src.decoder import decode_audio
 from src.metrics import compute_compression_ratio
 
-def compute_compression_ratio(original_file, compressed_file, output_file):
-    """
-    Computes the compression ratio between the original and compressed audio files
-    and stores the result in a specified file.
-
-    Args:
-        original_file (str): Path to the original audio file.
-        compressed_file (str): Path to the compressed audio file.
-        output_file (str): Path to store the compression ratio result.
-
-    Returns:
-        None
-    """
-    # Get the sizes of the files
-    original_size = os.path.getsize(original_file)
-    compressed_size = os.path.getsize(compressed_file)
-
-    # Compute the compression ratio
-    compression_ratio = original_size / compressed_size
-
-    # Store the result
-    with open(output_file, "w") as f:
-        f.write(f"Original Size: {original_size} bytes\n")
-        f.write(f"Compressed Size: {compressed_size} bytes\n")
-        f.write(f"Compression Ratio: {compression_ratio:.2f}\n")
-
-    print(f"Compression ratio computed and stored in {output_file}")
-
 def compute_signal_to_noise_ratio(signal, noise):
     """
     Computes the Signal-to-Noise Ratio (SNR) in decibels (dB).
@@ -129,13 +101,3 @@ def test_encoding_workflow():
 
 if __name__ == "__main__":
     test_encoding_workflow()
-
-    # Example usage
-    original_signal = np.random.normal(0, 1, 1000)  # Simulated original signal
-    noise_signal = np.random.normal(0, 0.1, 1000)  # Simulated noise
-
-    # Validate inputs
-    if validate_snr(original_signal, noise_signal):
-        # Compute SNR
-        snr_value = compute_signal_to_noise_ratio(original_signal, noise_signal)
-        print(f"Computed SNR: {snr_value:.2f} dB")
