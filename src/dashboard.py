@@ -1,4 +1,7 @@
 import os
+from src.encoder import encode_audio
+from src.decoder import decode_audio
+from src.metrics import compute_compression_ratio
 
 def compute_compression_ratio(original_file, compressed_file, output_file):
     """
@@ -28,14 +31,57 @@ def compute_compression_ratio(original_file, compressed_file, output_file):
 
     print(f"Compression ratio computed and stored in {output_file}")
 
+def test_encoding_workflow():
+    """
+    Tests the encoding and decoding workflow for speech and music files.
+
+    Returns:
+        None
+    """
+    # File paths
+    speech_file = "../data/speech.wav"
+    music_file = "../data/music.wav"
+    output_dir = "../output/encoded"
+    decoded_dir = "../output/decoded"
+    report_dir = "../output/reports"
+
+    # Ensure output directories exist
+    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(decoded_dir, exist_ok=True)
+    os.makedirs(report_dir, exist_ok=True)
+
+    # Bitrates to test
+    bitrates = [64, 128, 256]
+
+    # Test speech file
+    for bitrate in bitrates:
+        encoded_file = os.path.join(output_dir, f"speech_{bitrate}kbps.mp3")
+        decoded_file = os.path.join(decoded_dir, f"speech_{bitrate}kbps_decoded.wav")
+        report_file = os.path.join(report_dir, f"speech_{bitrate}kbps_report.txt")
+
+        # Encode
+        encode_audio(speech_file, output_dir, [bitrate])
+
+        # Decode
+        decode_audio(encoded_file, decoded_file)
+
+        # Compute compression ratio
+        compute_compression_ratio(speech_file, encoded_file, report_file)
+
+    # Test music file
+    for bitrate in bitrates:
+        encoded_file = os.path.join(output_dir, f"music_{bitrate}kbps.mp3")
+        decoded_file = os.path.join(decoded_dir, f"music_{bitrate}kbps_decoded.wav")
+        report_file = os.path.join(report_dir, f"music_{bitrate}kbps_report.txt")
+
+        # Encode
+        encode_audio(music_file, output_dir, [bitrate])
+
+        # Decode
+        decode_audio(encoded_file, decoded_file)
+
+        # Compute compression ratio
+        compute_compression_ratio(music_file, encoded_file, report_file)
+
 if __name__ == "__main__":
-    # Example usage
-    original_audio_file = "../data/music.wav"  # Path to the original audio file
-    compressed_audio_file = "../output/encoded/music_128kbps.mp3"  # Path to the compressed audio file
-    result_file = "../output/reports/compression_ratio.txt"  # Path to store the result
-
-    # Ensure the output directory exists
-    os.makedirs(os.path.dirname(result_file), exist_ok=True)
-
-    # Compute and store the compression ratio
-    compute_compression_ratio(original_audio_file, compressed_audio_file, result_file)
+    test_encoding_workflow()
