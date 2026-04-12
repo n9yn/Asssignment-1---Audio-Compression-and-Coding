@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from src.encoder import encode_audio
 from src.decoder import decode_audio
 from src.metrics import compute_compression_ratio
@@ -30,6 +31,49 @@ def compute_compression_ratio(original_file, compressed_file, output_file):
         f.write(f"Compression Ratio: {compression_ratio:.2f}\n")
 
     print(f"Compression ratio computed and stored in {output_file}")
+
+def compute_signal_to_noise_ratio(signal, noise):
+    """
+    Computes the Signal-to-Noise Ratio (SNR) in decibels (dB).
+
+    Args:
+        signal (numpy.ndarray): The original signal.
+        noise (numpy.ndarray): The noise signal.
+
+    Returns:
+        float: The SNR value in decibels.
+    """
+    # Compute signal power
+    signal_power = np.mean(np.square(signal))
+
+    # Compute noise power
+    noise_power = np.mean(np.square(noise))
+
+    # Calculate SNR
+    snr = 10 * np.log10(signal_power / noise_power)
+
+    return snr
+
+def validate_snr(signal, noise):
+    """
+    Validates the SNR calculation by ensuring the signal and noise are compatible.
+
+    Args:
+        signal (numpy.ndarray): The original signal.
+        noise (numpy.ndarray): The noise signal.
+
+    Returns:
+        bool: True if validation passes, False otherwise.
+    """
+    if len(signal) != len(noise):
+        print("Error: Signal and noise must have the same length.")
+        return False
+
+    if np.any(noise == 0):
+        print("Error: Noise contains zero values, which may lead to division by zero.")
+        return False
+
+    return True
 
 def test_encoding_workflow():
     """
@@ -85,3 +129,13 @@ def test_encoding_workflow():
 
 if __name__ == "__main__":
     test_encoding_workflow()
+
+    # Example usage
+    original_signal = np.random.normal(0, 1, 1000)  # Simulated original signal
+    noise_signal = np.random.normal(0, 0.1, 1000)  # Simulated noise
+
+    # Validate inputs
+    if validate_snr(original_signal, noise_signal):
+        # Compute SNR
+        snr_value = compute_signal_to_noise_ratio(original_signal, noise_signal)
+        print(f"Computed SNR: {snr_value:.2f} dB")
