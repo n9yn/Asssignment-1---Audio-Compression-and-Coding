@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 def compute_compression_ratio(original_file, compressed_file, output_file):
     """
@@ -28,6 +29,29 @@ def compute_compression_ratio(original_file, compressed_file, output_file):
 
     print(f"Compression ratio computed and stored in {output_file}")
 
+def compare_snr(signal1, noise1, signal2, noise2):
+    """
+    Compares the Signal-to-Noise Ratio (SNR) of two audio signals.
+
+    Args:
+        signal1 (numpy.ndarray): The first signal.
+        noise1 (numpy.ndarray): The noise corresponding to the first signal.
+        signal2 (numpy.ndarray): The second signal.
+        noise2 (numpy.ndarray): The noise corresponding to the second signal.
+
+    Returns:
+        tuple: SNR values for both signals.
+    """
+    def compute_snr(signal, noise):
+        signal_power = np.mean(np.square(signal))
+        noise_power = np.mean(np.square(noise))
+        return 10 * np.log10(signal_power / noise_power)
+
+    snr1 = compute_snr(signal1, noise1)
+    snr2 = compute_snr(signal2, noise2)
+
+    return snr1, snr2
+
 if __name__ == "__main__":
     # Example usage
     original_audio_file = "../data/music.wav"  # Path to the original audio file
@@ -39,3 +63,13 @@ if __name__ == "__main__":
 
     # Compute and store the compression ratio
     compute_compression_ratio(original_audio_file, compressed_audio_file, result_file)
+
+    # Example usage for SNR comparison
+    signal1 = np.random.normal(0, 1, 1000)  # Simulated signal 1
+    noise1 = np.random.normal(0, 0.1, 1000)  # Simulated noise 1
+    signal2 = np.random.normal(0, 1, 1000)  # Simulated signal 2
+    noise2 = np.random.normal(0, 0.2, 1000)  # Simulated noise 2
+
+    snr1, snr2 = compare_snr(signal1, noise1, signal2, noise2)
+    print(f"SNR of Signal 1: {snr1:.2f} dB")
+    print(f"SNR of Signal 2: {snr2:.2f} dB")

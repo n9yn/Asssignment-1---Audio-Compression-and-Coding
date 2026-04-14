@@ -2,7 +2,8 @@ import os
 import numpy as np
 from src.encoder import encode_audio
 from src.decoder import decode_audio
-from src.metrics import compute_compression_ratio
+from src.metrics import compute_compression_ratio, compare_snr
+from src.visualization import compare_waveforms, compare_spectrograms
 
 def compute_signal_to_noise_ratio(signal, noise):
     """
@@ -99,5 +100,35 @@ def test_encoding_workflow():
         # Compute compression ratio
         compute_compression_ratio(music_file, encoded_file, report_file)
 
+def compare_speech_vs_music():
+    """
+    Compares speech and music audio files based on SNR, waveform, and spectrogram.
+
+    Returns:
+        None
+    """
+    # File paths
+    speech_file = "../data/speech.wav"
+    music_file = "../data/music.wav"
+
+    # Simulated signals and noise for demonstration
+    speech_signal = np.random.normal(0, 1, 1000)
+    speech_noise = np.random.normal(0, 0.1, 1000)
+    music_signal = np.random.normal(0, 1, 1000)
+    music_noise = np.random.normal(0, 0.2, 1000)
+
+    # Compare SNR
+    snr_speech, snr_music = compare_snr(speech_signal, speech_noise, music_signal, music_noise)
+    print(f"SNR for Speech: {snr_speech:.2f} dB")
+    print(f"SNR for Music: {snr_music:.2f} dB")
+
+    # Compare waveforms
+    compare_waveforms(speech_signal, music_signal, ["Speech", "Music"])
+
+    # Compare spectrograms
+    sample_rate = 44100
+    compare_spectrograms(speech_signal, music_signal, ["Speech", "Music"], sample_rate)
+
 if __name__ == "__main__":
     test_encoding_workflow()
+    compare_speech_vs_music()
