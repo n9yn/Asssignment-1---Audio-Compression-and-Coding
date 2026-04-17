@@ -29,3 +29,7 @@ def format_bytes(byte_count):
         byte_count /= 1024
 
     return f"{byte_count:.2f} GB"
+
+def get_project_root():
+    """Return the absolute path to the project root directory."""
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
