@@ -39,6 +39,7 @@ def get_project_root():
 def get_adaptive_sample_count(audio_length, sr, max_display_samples=5000):
     """
     Calculate adaptive number of samples to display based on audio length.
+    Returns a segment that preserves waveform detail while being efficient.
     
     Args:
         audio_length (int): Total number of audio samples
@@ -46,23 +47,31 @@ def get_adaptive_sample_count(audio_length, sr, max_display_samples=5000):
         max_display_samples (int): Maximum samples to show in visualization
         
     Returns:
+        int: Start index for the segment
         int: Number of samples to display
         int: Decimation factor (for efficient display)
     """
     duration = audio_length / sr
     
-    # For short files (< 30 seconds), display everything
-    if duration <= 30:
-        return audio_length, 1
+    # For short files (< 60 seconds), display everything
+    if duration <= 60:
+        return 0, audio_length, 1
     
     # For medium files, show full waveform with decimation
     if duration <= 300:  # 5 minutes
         decimate_factor = max(1, audio_length // max_display_samples)
-        return min(audio_length, max_display_samples * 2), decimate_factor
+        return 0, audio_length, decimate_factor
     
-    # For long files, show first portion with decimation
-    decimate_factor = max(1, audio_length // max_display_samples)
-    return max_display_samples, decimate_factor
+    # For long files, show first 60 seconds with reasonable decimation
+    # For 60s segments, use higher display resolution (20k-40k samples)
+    segment_duration = 60  # seconds
+    segment_samples = segment_duration * sr
+    
+    # Use higher max_display_samples for 60-second segments to preserve detail
+    display_max = max(20000, max_display_samples * 4)
+    decimate_factor = max(1, segment_samples // display_max)
+    
+    return 0, segment_samples, decimate_factor
 
 def downsample_audio_for_display(audio, decimate_factor):
     """
@@ -82,47 +91,65 @@ def downsample_audio_for_display(audio, decimate_factor):
 def get_adaptive_spectrogram_params(audio_length, sr):
     """
     Calculate adaptive parameters for spectrogram computation.
+    For very large files, limits the duration to keep computation fast.
     
     Args:
         audio_length (int): Total number of audio samples
         sr (int): Sample rate
         
     Returns:
-        dict: Parameters including n_fft, noverlap, downsample_factor
+        dict: Parameters including n_fft, noverlap, downsample_factor, max_samples
     """
     duration = audio_length / sr
     
     # Default parameters for short audio
-    default_nfft = 2048
-    
-    # Adjust based on duration
     if duration <= 30:  # Short files
         return {
             'n_fft': 2048,
             'noverlap': 1024,
             'downsample_factor': 1,
-            'nperseg': 2048
+            'nperseg': 2048,
+            'max_samples': audio_length,  # Use entire audio
+            'max_duration': duration
         }
     elif duration <= 300:  # Medium files (up to 5 minutes)
         return {
-            'n_fft': 4096,
-            'noverlap': 2048,
+            'n_fft': 2048,
+            'noverlap': 1024,
             'downsample_factor': 1,
-            'nperseg': 4096
+            'nperseg': 2048,
+            'max_samples': audio_length,
+            'max_duration': duration
         }
-    else:  # Large files (> 5 minutes)
-        # Downsample to keep computation reasonable
-        downsample_factor = max(1, int(duration / 300))  # Target ~5 minute visualization
+    elif duration <= 1800:  # Large files (5-30 minutes)
+        # Show first 60 seconds to keep computation reasonable
+        max_duration = 60  # seconds
+        max_samples = max_duration * sr
         return {
-            'n_fft': 4096,
-            'noverlap': 2048,
-            'downsample_factor': downsample_factor,
-            'nperseg': 4096
+            'n_fft': 2048,
+            'noverlap': 512,
+            'downsample_factor': 2,  # 2x downsample for faster computation
+            'nperseg': 2048,
+            'max_samples': max_samples,
+            'max_duration': max_duration
+        }
+    else:  # Very large files (> 30 minutes)
+        # Show first 60 seconds with moderate downsampling
+        max_duration = 60  # seconds
+        max_samples = max_duration * sr
+        return {
+            'n_fft': 1024,
+            'noverlap': 256,
+            'downsample_factor': 2,  # 2x downsample for fast computation
+            'nperseg': 1024,
+            'max_samples': max_samples,
+            'max_duration': max_duration
         }
 
 def prepare_audio_for_spectrogram(audio, sr):
     """
     Prepare audio for efficient spectrogram computation.
+    Limits duration for large files and applies downsampling.
     
     Args:
         audio (numpy.ndarray): Audio signal
@@ -132,13 +159,22 @@ def prepare_audio_for_spectrogram(audio, sr):
         tuple: (prepared_audio, params, effective_sr)
     """
     params = get_adaptive_spectrogram_params(len(audio), sr)
+    
+    # First, limit to max_samples if needed
+    max_samples = params['max_samples']
+    if len(audio) > max_samples:
+        audio_limited = audio[:max_samples]
+    else:
+        audio_limited = audio
+    
+    # Then downsample if needed
     downsample_factor = params['downsample_factor']
     
     if downsample_factor > 1:
-        prepared = signal.decimate(audio, downsample_factor, zero_phase=True, ftype='iir', n=4)
+        prepared = signal.decimate(audio_limited, downsample_factor, zero_phase=True, ftype='iir', n=4)
         effective_sr = sr // downsample_factor
     else:
-        prepared = audio
+        prepared = audio_limited
         effective_sr = sr
     
     return prepared, params, effective_sr
