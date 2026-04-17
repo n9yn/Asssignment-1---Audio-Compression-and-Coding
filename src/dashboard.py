@@ -91,26 +91,36 @@ def page_visualization():
                 # Progress indicator for processing
                 with st.spinner("Preparing waveforms..."):
                     # Get adaptive sample counts
-                    samples_to_show_1, decimate_1 = get_adaptive_sample_count(len(y1), sr1)
-                    samples_to_show_2, decimate_2 = get_adaptive_sample_count(len(y2), sr2)
+                    start_idx_1, samples_to_show_1, decimate_1 = get_adaptive_sample_count(len(y1), sr1)
+                    start_idx_2, samples_to_show_2, decimate_2 = get_adaptive_sample_count(len(y2), sr2)
                     
                     # Prepare data for display
-                    y1_display = downsample_audio_for_display(y1[:samples_to_show_1], decimate_1)
-                    y2_display = downsample_audio_for_display(y2[:samples_to_show_2], decimate_2)
+                    y1_display = downsample_audio_for_display(y1[start_idx_1:start_idx_1+samples_to_show_1], decimate_1)
+                    y2_display = downsample_audio_for_display(y2[start_idx_2:start_idx_2+samples_to_show_2], decimate_2)
                     
                     # Create figure
                     fig, axes = plt.subplots(2, 1, figsize=(12, 6))
                     
                     # Plot waveform 1
                     axes[0].plot(y1_display)
-                    axes[0].set_title(f"Waveform - {uploaded_file_1.name} ({len(y1) / sr1:.2f}s)")
+                    duration_1 = len(y1) / sr1
+                    display_duration_1 = samples_to_show_1 / sr1
+                    if duration_1 > 30:
+                        axes[0].set_title(f"Waveform - {uploaded_file_1.name} (showing first {display_duration_1:.1f}s of {duration_1:.1f}s)")
+                    else:
+                        axes[0].set_title(f"Waveform - {uploaded_file_1.name} ({duration_1:.2f}s)")
                     axes[0].set_xlabel("Sample")
                     axes[0].set_ylabel("Amplitude")
                     axes[0].grid(True, alpha=0.3)
                     
                     # Plot waveform 2
                     axes[1].plot(y2_display)
-                    axes[1].set_title(f"Waveform - {uploaded_file_2.name} ({len(y2) / sr2:.2f}s)")
+                    duration_2 = len(y2) / sr2
+                    display_duration_2 = samples_to_show_2 / sr2
+                    if duration_2 > 30:
+                        axes[1].set_title(f"Waveform - {uploaded_file_2.name} (showing first {display_duration_2:.1f}s of {duration_2:.1f}s)")
+                    else:
+                        axes[1].set_title(f"Waveform - {uploaded_file_2.name} ({duration_2:.2f}s)")
                     axes[1].set_xlabel("Sample")
                     axes[1].set_ylabel("Amplitude")
                     axes[1].grid(True, alpha=0.3)
@@ -118,9 +128,9 @@ def page_visualization():
                     plt.tight_layout()
                     st.pyplot(fig)
                     
-                    # Display decimation info
-                    if decimate_1 > 1 or decimate_2 > 1:
-                        st.info(f"📊 Large files detected. Waveforms are downsampled for faster rendering (Decimation: File1={decimate_1}x, File2={decimate_2}x)")
+                    # Display info about waveforms shown
+                    if samples_to_show_1 < len(y1) or samples_to_show_2 < len(y2):
+                        st.info(f"📊 Large files: Showing first 60 seconds to preserve waveform detail. Use the compression analysis page to process full files.")
             
             if viz_option in ["Spectrograms", "Both"]:
                 st.subheader("📈 Spectrograms Comparison")
@@ -137,7 +147,12 @@ def page_visualization():
                     f, t, Sxx = signal.spectrogram(y1_spec, fs=sr1_spec, nperseg=params1['nperseg'], noverlap=params1['noverlap'])
                     im1 = axes[0].pcolormesh(t, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap="viridis")
                     axes[0].set_ylabel('Frequency [Hz]')
-                    axes[0].set_title(f"Spectrogram - {uploaded_file_1.name} ({len(y1) / sr1:.2f}s)")
+                    duration_1 = len(y1) / sr1
+                    display_duration_1 = params1['max_duration']
+                    if duration_1 > 300:
+                        axes[0].set_title(f"Spectrogram - {uploaded_file_1.name} (first {display_duration_1:.0f}s of {duration_1:.1f}s)")
+                    else:
+                        axes[0].set_title(f"Spectrogram - {uploaded_file_1.name} ({duration_1:.2f}s)")
                     cbar1 = plt.colorbar(im1, ax=axes[0], label='Power [dB]')
                     
                     # Spectrogram 2
@@ -145,15 +160,20 @@ def page_visualization():
                     im2 = axes[1].pcolormesh(t, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap="viridis")
                     axes[1].set_ylabel('Frequency [Hz]')
                     axes[1].set_xlabel('Time [s]')
-                    axes[1].set_title(f"Spectrogram - {uploaded_file_2.name} ({len(y2) / sr2:.2f}s)")
+                    duration_2 = len(y2) / sr2
+                    display_duration_2 = params2['max_duration']
+                    if duration_2 > 300:
+                        axes[1].set_title(f"Spectrogram - {uploaded_file_2.name} (first {display_duration_2:.0f}s of {duration_2:.1f}s)")
+                    else:
+                        axes[1].set_title(f"Spectrogram - {uploaded_file_2.name} ({duration_2:.2f}s)")
                     cbar2 = plt.colorbar(im2, ax=axes[1], label='Power [dB]')
                     
                     plt.tight_layout()
                     st.pyplot(fig)
                     
                     # Display optimization info
-                    if params1['downsample_factor'] > 1 or params2['downsample_factor'] > 1:
-                        st.info(f"⚡ Optimization applied for large files. Audio was downsampled for spectrogram computation (Downsample: File1={params1['downsample_factor']}x, File2={params2['downsample_factor']}x)")
+                    if params1['max_samples'] < len(y1) or params2['max_samples'] < len(y2):
+                        st.warning(f"⚡ **Large files detected:** Only the first {params1['max_duration']:.0f}s is shown for performance. Use the compression analysis page for complete file analysis.")
         
         except Exception as e:
             st.error(f"Error processing files: {str(e)}")
