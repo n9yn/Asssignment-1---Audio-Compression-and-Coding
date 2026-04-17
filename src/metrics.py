@@ -13,23 +13,43 @@ def compute_compression_ratio(original_file, compressed_file, output_file):
         output_file (str): Path to store the compression ratio result.
 
     Returns:
-        None
+        float: The compression ratio.
+    
+    Raises:
+        FileNotFoundError: If input files do not exist.
     """
-    # Get the sizes of the files
-    original_size = os.path.getsize(original_file)
-    compressed_size = os.path.getsize(compressed_file)
-
-    # Compute the compression ratio
-    compression_ratio = original_size / compressed_size
-
-    # Store the result
-    with open(output_file, "w") as f:
-        f.write(f"Original Size: {original_size} bytes\n")
-        f.write(f"Compressed Size: {compressed_size} bytes\n")
-        f.write(f"Compression Ratio: {compression_ratio:.2f}\n")
-
-    print(f"Compression ratio computed and stored in {output_file}")
-    return compression_ratio
+    # Validate input files
+    if not os.path.exists(original_file):
+        raise FileNotFoundError(f"Original file not found: {original_file}")
+    if not os.path.exists(compressed_file):
+        raise FileNotFoundError(f"Compressed file not found: {compressed_file}")
+    
+    try:
+        # Get the sizes of the files
+        original_size = os.path.getsize(original_file)
+        compressed_size = os.path.getsize(compressed_file)
+        
+        # Validate sizes
+        if compressed_size == 0:
+            raise ValueError("Compressed file is empty")
+        
+        # Compute the compression ratio
+        compression_ratio = original_size / compressed_size
+        
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        
+        # Store the result
+        with open(output_file, "w") as f:
+            f.write(f"Original Size: {original_size} bytes\n")
+            f.write(f"Compressed Size: {compressed_size} bytes\n")
+            f.write(f"Compression Ratio: {compression_ratio:.2f}\n")
+        
+        print(f"Compression ratio computed and stored in {output_file}")
+        return compression_ratio
+    except Exception as e:
+        print(f"Error computing compression ratio: {str(e)}")
+        raise
 
 def compute_snr(original_file, compressed_file):
     """
@@ -41,34 +61,51 @@ def compute_snr(original_file, compressed_file):
 
     Returns:
         float: The SNR value in dB.
+    
+    Raises:
+        FileNotFoundError: If input files do not exist.
     """
-    # Load the audio files
-    y_orig, sr_orig = librosa.load(original_file, sr=None)
-    y_comp, sr_comp = librosa.load(compressed_file, sr=None)
-
-    # Ensure same sample rate
-    if sr_orig != sr_comp:
-        y_comp = librosa.resample(y_comp, orig_sr=sr_comp, target_sr=sr_orig)
-
-    # Trim to the same length
-    min_len = min(len(y_orig), len(y_comp))
-    y_orig = y_orig[:min_len]
-    y_comp = y_comp[:min_len]
-
-    # Compute noise as difference
-    noise = y_orig - y_comp
-
-    # Compute power
-    signal_power = np.mean(y_orig ** 2)
-    noise_power = np.mean(noise ** 2)
-
-    # Avoid division by zero
-    if noise_power == 0:
-        return float('inf')
-
-    # Compute SNR
-    snr = 10 * np.log10(signal_power / noise_power)
-    return snr
+    # Validate input files
+    if not os.path.exists(original_file):
+        raise FileNotFoundError(f"Original file not found: {original_file}")
+    if not os.path.exists(compressed_file):
+        raise FileNotFoundError(f"Compressed file not found: {compressed_file}")
+    
+    try:
+        # Load the audio files
+        y_orig, sr_orig = librosa.load(original_file, sr=None)
+        y_comp, sr_comp = librosa.load(compressed_file, sr=None)
+        
+        # Ensure same sample rate
+        if sr_orig != sr_comp:
+            y_comp = librosa.resample(y_comp, orig_sr=sr_comp, target_sr=sr_orig)
+        
+        # Pad shorter signal instead of truncating to preserve information
+        max_len = max(len(y_orig), len(y_comp))
+        y_orig_padded = np.zeros(max_len)
+        y_comp_padded = np.zeros(max_len)
+        y_orig_padded[:len(y_orig)] = y_orig
+        y_comp_padded[:len(y_comp)] = y_comp
+        
+        # Compute noise as difference
+        noise = y_orig_padded - y_comp_padded
+        
+        # Compute power
+        signal_power = np.mean(y_orig_padded ** 2)
+        noise_power = np.mean(noise ** 2)
+        
+        # Avoid division by zero with proper checks
+        if signal_power == 0:
+            raise ValueError("Original signal has zero power")
+        if noise_power == 0:
+            return float('inf')  # Perfect reconstruction
+        
+        # Compute SNR
+        snr = 10 * np.log10(signal_power / noise_power)
+        return snr
+    except Exception as e:
+        print(f"Error computing SNR: {str(e)}")
+        raise
 
 def compare_snr(signal1, noise1, signal2, noise2):
     """
@@ -82,16 +119,39 @@ def compare_snr(signal1, noise1, signal2, noise2):
 
     Returns:
         tuple: SNR values for both signals.
+    
+    Raises:
+        ValueError: If signal lengths don't match noise lengths or invalid inputs.
     """
-    def compute_snr(signal, noise):
+    # Input validation
+    if len(signal1) != len(noise1):
+        raise ValueError("signal1 and noise1 must have the same length")
+    if len(signal2) != len(noise2):
+        raise ValueError("signal2 and noise2 must have the same length")
+    
+    def compute_snr_internal(signal, noise):
+        """Compute SNR for a single signal-noise pair with proper zero-checking."""
+        if len(signal) == 0 or len(noise) == 0:
+            raise ValueError("Signal and noise arrays cannot be empty")
+        
         signal_power = np.mean(np.square(signal))
         noise_power = np.mean(np.square(noise))
+        
+        # Proper zero-checking
+        if signal_power == 0:
+            raise ValueError("Signal power is zero")
+        if noise_power == 0:
+            return float('inf')  # Perfect reconstruction
+        
         return 10 * np.log10(signal_power / noise_power)
-
-    snr1 = compute_snr(signal1, noise1)
-    snr2 = compute_snr(signal2, noise2)
-
-    return snr1, snr2
+    
+    try:
+        snr1 = compute_snr_internal(signal1, noise1)
+        snr2 = compute_snr_internal(signal2, noise2)
+        return snr1, snr2
+    except Exception as e:
+        print(f"Error comparing SNR: {str(e)}")
+        raise
 
 if __name__ == "__main__":
     # Example usage
