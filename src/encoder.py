@@ -1,6 +1,9 @@
 import os
 from pydub import AudioSegment
 
+# Set the path to the ffmpeg executable
+AudioSegment.converter = "C:/path/to/ffmpeg/bin/ffmpeg.exe"
+
 def encode_audio(input_file, output_dir, bitrates):
     """
     Encodes an audio file into multiple bitrates and saves the output files.
@@ -31,8 +34,8 @@ def encode_audio(input_file, output_dir, bitrates):
     return output_files
 
 if __name__ == "__main__":
-    # Example usage
-    input_audio_file = "../data/music.wav"  # Path to the input audio file
+    # Updated example usage to test with a speech file
+    input_audio_file = "../data/original/speech.wav"  # Path to the input speech audio file
     output_directory = "../output/encoded"  # Directory to save encoded files
     target_bitrates = [64, 128, 256]  # Bitrates to encode to
 
