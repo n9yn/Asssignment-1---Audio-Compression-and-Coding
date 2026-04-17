@@ -8,7 +8,7 @@ from src.encoder import encode_audio
 from src.decoder import decode_audio, verify_audio_quality
 from src.metrics import compute_compression_ratio, compute_snr
 from src.visualization import compare_waveforms, compare_spectrograms
-from src.utils import ensure_directories, save_uploaded_tempfile, format_bytes
+from src.utils import ensure_directories, save_uploaded_tempfile, format_bytes, get_project_root
 
 
 def page_home():
@@ -70,14 +70,14 @@ def page_visualization():
                 st.write(f"Sample Rate: {sr1} Hz")
                 st.write(f"Duration: {len(y1) / sr1:.2f} seconds")
                 st.write(f"File Size: {format_bytes(uploaded_file_1.size)}")
-                st.audio(temp_file_1, format='audio/wav')
+                st.audio(temp_file_1)
             
             with col2:
                 st.subheader(f"File 2: {uploaded_file_2.name}")
                 st.write(f"Sample Rate: {sr2} Hz")
                 st.write(f"Duration: {len(y2) / sr2:.2f} seconds")
                 st.write(f"File Size: {format_bytes(uploaded_file_2.size)}")
-                st.audio(temp_file_2, format='audio/wav')
+                st.audio(temp_file_2)
             
             # Visualization options
             viz_option = st.radio("Select Visualization:", ["Waveforms", "Spectrograms", "Both"])
@@ -256,8 +256,7 @@ def page_compression():
                         with col1:
                             st.markdown("**Original Audio:**")
                             try:
-                                with open(temp_input, 'rb') as f:
-                                    st.audio(f.read(), format='audio/wav')
+                                st.audio(temp_input)
                             except Exception as e:
                                 st.error(f"Could not load original audio: {str(e)}")
                         
@@ -274,8 +273,7 @@ def page_compression():
                             selected_result = next(r for r in results if r['bitrate'] == selected_bitrate)
                             
                             try:
-                                with open(selected_result['decoded_file'], 'rb') as f:
-                                    st.audio(f.read(), format='audio/wav')
+                                st.audio(selected_result['decoded_file'])
                                 st.caption(f"Playing {selected_bitrate} kbps compressed audio")
                             except Exception as e:
                                 st.error(f"Could not load compressed audio: {str(e)}")
