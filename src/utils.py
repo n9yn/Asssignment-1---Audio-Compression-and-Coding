@@ -25,8 +25,13 @@ def save_uploaded_tempfile(uploaded_file, suffix="") -> str:
 def format_bytes(byte_count: int) -> str:
     """Format bytes into a human-readable string."""
     for unit in ["bytes", "KB", "MB", "GB"]:
-        if byte_count < 1024 or unit == "GB":
-            return f"{byte_count:.2f} {unit}" if unit != "bytes" else f"{byte_count} {unit}"
+        if byte_count < 1024:
+            if unit == "bytes":
+                return f"{int(byte_count)} {unit}"
+            else:
+                return f"{byte_count:.2f} {unit}"
+        if unit == "GB":
+            return f"{byte_count:.2f} {unit}"
         byte_count /= 1024
     return f"{byte_count:.2f} GB"
 
