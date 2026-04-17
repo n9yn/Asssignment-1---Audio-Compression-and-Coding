@@ -385,6 +385,16 @@ else:  # Compression & Analysis page
             default=[128, 256],
             help="Select one or more bitrates for compression"
         )
+        
+        # ===================================================================
+        # PHASE 4 TASK: DISPLAY OPTIONS FOR METRICS
+        # ===================================================================
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 📊 Display Options")
+        
+        show_bitrate = st.sidebar.checkbox("🎚️ Show bitrate", value=True, key="show_bitrate_check")
+        show_compression_ratio = st.sidebar.checkbox("📦 Show compression ratio", value=True, key="show_compression_check")
+        show_snr = st.sidebar.checkbox("📈 Show SNR values", value=True, key="show_snr_check")
 
         if st.sidebar.button("▶️ Process Audio", use_container_width=True):
             if not bitrates:
@@ -446,25 +456,34 @@ else:  # Compression & Analysis page
                 st.markdown("---")
                 st.header("📈 Analysis Results")
 
-                # Summary metrics
+                # Summary metrics with display options
                 st.markdown("### 📊 Summary")
                 cols = st.columns(len(results))
                 for idx, res in enumerate(results):
                     with cols[idx]:
-                        st.metric(f"Bitrate: {res['bitrate']} kbps", f"{res['snr']:.2f} dB", "SNR")
+                        # Conditional metric display based on settings
+                        if show_bitrate:
+                            st.metric(f"Bitrate", f"{res['bitrate']} kbps")
+                        if show_snr:
+                            st.metric("SNR (dB)", f"{res['snr']:.2f} dB")
 
                 # Detailed results
                 for res in results:
                     with st.expander(f"📌 Details - {res['bitrate']} kbps", expanded=False):
-                        # Metrics info
+                        # Metrics info with display options
                         col1, col2 = st.columns(2)
+                        
                         with col1:
-                            st.subheader(f"Bitrate: {res['bitrate']} kbps")
-                            st.metric("SNR (dB)", f"{res['snr']:.2f}")
+                            if show_bitrate:
+                                st.subheader(f"🎚️ Bitrate: {res['bitrate']} kbps")
+                            if show_snr:
+                                st.metric("📈 SNR (dB)", f"{res['snr']:.2f}")
                         
                         with col2:
-                            with open(res['compression_ratio_file'], 'r') as f:
-                                st.text(f.read())
+                            if show_compression_ratio:
+                                st.subheader("📦 Compression Details")
+                                with open(res['compression_ratio_file'], 'r') as f:
+                                    st.text(f.read())
                         
                         st.markdown("---")
 
