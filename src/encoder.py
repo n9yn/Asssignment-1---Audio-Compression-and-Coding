@@ -1,8 +1,8 @@
 import os
-from pydub import AudioSegment
-
-# Set the path to the ffmpeg executable
-AudioSegment.converter = "C:/path/to/ffmpeg/bin/ffmpeg.exe"
+import numpy as np
+import soundfile as sf
+import subprocess
+import shutil
 
 def encode_audio(input_file, output_dir, bitrates):
     """
@@ -15,22 +15,68 @@ def encode_audio(input_file, output_dir, bitrates):
 
     Returns:
         list[str]: Paths to the encoded audio files.
+    
+    Raises:
+        FileNotFoundError: If input file does not exist.
+        ValueError: If bitrates list is empty or invalid.
     """
-    # Load the audio file
-    audio = AudioSegment.from_file(input_file)
-
+    # Input validation
+    if not os.path.exists(input_file):
+        raise FileNotFoundError(f"Input file not found: {input_file}")
+    
+    if not bitrates or not isinstance(bitrates, (list, tuple)):
+        raise ValueError("bitrates must be a non-empty list or tuple of integers")
+    
+    if not all(isinstance(b, (int, float)) and b > 0 for b in bitrates):
+        raise ValueError("All bitrates must be positive numbers")
+    
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
-
+    
     output_files = []
-
-    # Encode the audio file to each specified bitrate
-    for bitrate in bitrates:
-        output_file = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(input_file))[0]}_{bitrate}kbps.mp3")
-        audio.export(output_file, format="mp3", bitrate=f"{bitrate}k")
-        output_files.append(output_file)
-        print(f"Encoded {input_file} to {bitrate} kbps and saved as {output_file}")
-
+    base_name = os.path.splitext(os.path.basename(input_file))[0]
+    
+    # Check if FFmpeg is available
+    ffmpeg_available = shutil.which('ffmpeg') is not None
+    
+    if not ffmpeg_available:
+        print("Warning: FFmpeg not found. Using WAV format instead of MP3.")
+        print("For actual compression, install FFmpeg: https://ffmpeg.org/download.html")
+    
+    try:
+        # Encode the audio file to each specified bitrate
+        for bitrate in bitrates:
+            if ffmpeg_available:
+                # Use FFmpeg for MP3 compression
+                output_file = os.path.join(output_dir, f"{base_name}_{int(bitrate)}kbps.mp3")
+                cmd = [
+                    'ffmpeg',
+                    '-i', input_file,
+                    '-b:a', f'{int(bitrate)}k',
+                    '-q:a', '9',  # Variable bitrate quality
+                    '-y',  # Overwrite output file
+                    output_file
+                ]
+                
+                # Run FFmpeg command
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode != 0:
+                    raise RuntimeError(f"FFmpeg error: {result.stderr}")
+                
+                output_files.append(output_file)
+                print(f"Encoded {input_file} to {int(bitrate)} kbps and saved as {output_file}")
+            else:
+                # Fallback: Load audio and save as WAV (no actual bitrate compression)
+                data, samplerate = sf.read(input_file)
+                output_file = os.path.join(output_dir, f"{base_name}_{int(bitrate)}kbps.wav")
+                sf.write(output_file, data, samplerate, format='WAV', subtype='PCM_16')
+                output_files.append(output_file)
+                print(f"Saved {input_file} as WAV (no compression applied): {output_file}")
+    
+    except Exception as e:
+        print(f"Error encoding audio: {str(e)}")
+        raise
+    
     return output_files
 
 if __name__ == "__main__":
