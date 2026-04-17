@@ -3,52 +3,12 @@ import streamlit as st
 import numpy as np
 import librosa
 import matplotlib.pyplot as plt
+from scipy import signal
 from src.encoder import encode_audio
 from src.decoder import decode_audio, verify_audio_quality
-from src.metrics import compute_compression_ratio, compute_snr, compare_snr
+from src.metrics import compute_compression_ratio, compute_snr
 from src.visualization import compare_waveforms, compare_spectrograms
-from src.utils import get_project_root, ensure_directories, save_uploaded_tempfile, format_bytes
-
-
-def compute_signal_to_noise_ratio(signal, noise):
-    """
-    Computes the Signal-to-Noise Ratio (SNR) in decibels (dB).
-
-    Args:
-        signal (numpy.ndarray): The original signal.
-        noise (numpy.ndarray): The noise signal.
-
-    Returns:
-        float: The SNR value in decibels.
-    """
-    signal_power = np.mean(np.square(signal))
-    noise_power = np.mean(np.square(noise))
-    
-    if noise_power == 0:
-        return float('inf')
-    
-    snr = 10 * np.log10(signal_power / noise_power)
-    return snr
-
-
-def validate_snr(signal, noise):
-    """
-    Validates the SNR calculation by ensuring the signal and noise are compatible.
-
-    Args:
-        signal (numpy.ndarray): The original signal.
-        noise (numpy.ndarray): The noise signal.
-
-    Returns:
-        bool: True if validation passes, False otherwise.
-    """
-    if len(signal) != len(noise):
-        return False
-    
-    if np.any(noise == 0):
-        return False
-    
-    return True
+from src.utils import ensure_directories, save_uploaded_tempfile, format_bytes
 
 
 def page_home():
@@ -110,12 +70,14 @@ def page_visualization():
                 st.write(f"Sample Rate: {sr1} Hz")
                 st.write(f"Duration: {len(y1) / sr1:.2f} seconds")
                 st.write(f"File Size: {format_bytes(uploaded_file_1.size)}")
+                st.audio(temp_file_1, format='audio/wav')
             
             with col2:
                 st.subheader(f"File 2: {uploaded_file_2.name}")
                 st.write(f"Sample Rate: {sr2} Hz")
                 st.write(f"Duration: {len(y2) / sr2:.2f} seconds")
                 st.write(f"File Size: {format_bytes(uploaded_file_2.size)}")
+                st.audio(temp_file_2, format='audio/wav')
             
             # Visualization options
             viz_option = st.radio("Select Visualization:", ["Waveforms", "Spectrograms", "Both"])
@@ -139,7 +101,6 @@ def page_visualization():
             
             if viz_option in ["Spectrograms", "Both"]:
                 st.subheader("📈 Spectrograms Comparison")
-                from scipy import signal
                 
                 fig, axes = plt.subplots(2, 1, figsize=(12, 8))
                 
@@ -286,6 +247,51 @@ def page_compression():
                         
                         st.dataframe(results_data, use_container_width=True)
                         
+                        # Audio Playback Section
+                        st.subheader("🎵 Audio Playback & Comparison")
+                        st.markdown("Compare original vs compressed audio quality:")
+                        
+                        # Original audio playback
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.markdown("**Original Audio:**")
+                            try:
+                                with open(temp_input, 'rb') as f:
+                                    st.audio(f.read(), format='audio/wav')
+                            except Exception as e:
+                                st.error(f"Could not load original audio: {str(e)}")
+                        
+                        # Compressed audio options
+                        with col2:
+                            st.markdown("**Compressed Audio:**")
+                            selected_bitrate = st.selectbox(
+                                "Select bitrate to play:",
+                                [r['bitrate'] for r in results],
+                                key="playback_bitrate"
+                            )
+                            
+                            # Find selected result
+                            selected_result = next(r for r in results if r['bitrate'] == selected_bitrate)
+                            
+                            try:
+                                with open(selected_result['decoded_file'], 'rb') as f:
+                                    st.audio(f.read(), format='audio/wav')
+                                st.caption(f"Playing {selected_bitrate} kbps compressed audio")
+                            except Exception as e:
+                                st.error(f"Could not load compressed audio: {str(e)}")
+                        
+                        # Quality comparison metrics for selected bitrate
+                        st.markdown("---")
+                        st.subheader("📈 Quality Metrics for Selected Bitrate")
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Bitrate", f"{selected_result['bitrate']} kbps")
+                        with col2:
+                            st.metric("Compression Ratio", f"{selected_result['compression_ratio']:.2f}x")
+                        with col3:
+                            snr_display = f"{selected_result['snr']:.2f} dB" if selected_result['snr'] != float('inf') else "∞ dB"
+                            st.metric("SNR", snr_display)
+                        
                         # Visualization of metrics
                         if len(results) > 1:
                             st.subheader("📈 Metrics Comparison")
@@ -351,7 +357,7 @@ def main():
     Audio Compression & Coding Dashboard  
     Evaluating Perceptual Audio Encoding Performance
     
-    [GitHub Repository](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding)
+    [GitHub Repository](https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding.git)
     """)
 
 
