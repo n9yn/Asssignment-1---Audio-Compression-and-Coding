@@ -24,7 +24,9 @@ The system:
 ## Project Structure
 src/ → source code  
 data/ → input audio  
-outputs/ → generated results  
+output/ → generated results (created automatically)
 
 ## How to Run
-(Will be updated later)
+1. Install dependencies: `pip install -r requirements.txt`
+2. Run the dashboard: `python main.py`
+3. Upload an audio file in the Streamlit app and select bitrates to process.
