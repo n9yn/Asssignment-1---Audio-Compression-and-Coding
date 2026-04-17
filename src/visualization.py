@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import librosa
+import librosa.display
+from scipy import signal
 
 def compare_waveforms(signal1, signal2, labels):
     """
@@ -36,7 +39,7 @@ def compare_waveforms(signal1, signal2, labels):
 
 def compare_spectrograms(signal1, signal2, labels, sample_rate):
     """
-    Compares the spectrograms of two audio signals.
+    Compares the spectrograms of two audio signals using scipy.signal.spectrogram.
 
     Args:
         signal1 (numpy.ndarray): The first signal.
@@ -51,17 +54,20 @@ def compare_spectrograms(signal1, signal2, labels, sample_rate):
 
     # Plot spectrogram for signal 1
     plt.subplot(2, 1, 1)
-    plt.specgram(signal1, Fs=sample_rate, cmap="viridis")
+    f, t, Sxx = signal.spectrogram(signal1, fs=sample_rate)
+    plt.pcolormesh(t, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap="viridis")
+    plt.ylabel('Frequency [Hz]')
     plt.title(f"Spectrogram of {labels[0]}")
-    plt.xlabel("Time")
-    plt.ylabel("Frequency")
+    plt.colorbar(label='Power [dB]')
 
     # Plot spectrogram for signal 2
     plt.subplot(2, 1, 2)
-    plt.specgram(signal2, Fs=sample_rate, cmap="viridis")
+    f, t, Sxx = signal.spectrogram(signal2, fs=sample_rate)
+    plt.pcolormesh(t, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap="viridis")
+    plt.xlabel('Time [s]')
+    plt.ylabel('Frequency [Hz]')
     plt.title(f"Spectrogram of {labels[1]}")
-    plt.xlabel("Time")
-    plt.ylabel("Frequency")
+    plt.colorbar(label='Power [dB]')
 
     plt.tight_layout()
     plt.show()
