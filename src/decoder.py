@@ -11,7 +11,7 @@ def decode_audio(input_file, output_file):
         output_file (str): Path to save the decoded WAV file.
 
     Returns:
-        None
+        str: The decoded WAV file path.
     """
     # Load the encoded audio file
     audio = AudioSegment.from_file(input_file)
@@ -19,6 +19,7 @@ def decode_audio(input_file, output_file):
     # Export the audio file to WAV format
     audio.export(output_file, format="wav")
     print(f"Decoded {input_file} and saved as {output_file}")
+    return output_file
 
 def play_audio(file_path):
     """

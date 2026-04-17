@@ -29,6 +29,7 @@ def compute_compression_ratio(original_file, compressed_file, output_file):
         f.write(f"Compression Ratio: {compression_ratio:.2f}\n")
 
     print(f"Compression ratio computed and stored in {output_file}")
+    return compression_ratio
 
 def compute_snr(original_file, compressed_file):
     """

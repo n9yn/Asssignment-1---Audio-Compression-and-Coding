@@ -1,5 +1,7 @@
-# Asssignment-1---Audio-Compression-and-Coding
+# Assignment-1---Audio-Compression-and-Coding
 # Evaluating Perceptual Audio Encoding Performance
+
+**Repository:** [https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding)
 
 ## Project Description
 This project evaluates the performance of perceptual audio encoding at multiple bitrates.
@@ -67,7 +69,7 @@ The system:
 ## Installation & Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding.git
+   git clone https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding.git
    cd Asssignment-1---Audio-Compression-and-Coding
    ```
 

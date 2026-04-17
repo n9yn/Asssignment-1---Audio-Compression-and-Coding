@@ -48,12 +48,13 @@ def save_waveform_image(fig, output_image_path):
         output_image_path (str): Path to save the waveform image.
 
     Returns:
-        None
+        str: The path to the saved waveform image.
     """
     os.makedirs(os.path.dirname(output_image_path), exist_ok=True)
-    plt.savefig(output_image_path, dpi=100, bbox_inches='tight')
+    fig.savefig(output_image_path, dpi=100, bbox_inches='tight')
     plt.close(fig)  # Close the figure to free memory
     print(f"Waveform image saved to {output_image_path}")
+    return output_image_path
 
 def generate_waveform_visualization(audio_file, output_image_path, title="Waveform"):
     """
@@ -66,7 +67,7 @@ def generate_waveform_visualization(audio_file, output_image_path, title="Wavefo
         title (str): Title for the waveform plot. Default is "Waveform".
 
     Returns:
-        None
+        str: The path to the saved waveform image.
     """
     # Task 1: Extract waveform
     y, sr = extract_waveform(audio_file)
@@ -75,7 +76,7 @@ def generate_waveform_visualization(audio_file, output_image_path, title="Wavefo
     fig = plot_waveform(y, sr, title=title)
     
     # Task 3: Save waveform image
-    save_waveform_image(fig, output_image_path)
+    return save_waveform_image(fig, output_image_path)
 
 def extract_spectrogram(audio_file):
     """
@@ -124,12 +125,13 @@ def save_spectrogram_image(fig, output_image_path):
         output_image_path (str): Path to save the spectrogram image.
 
     Returns:
-        None
+        str: The path to the saved spectrogram image.
     """
     os.makedirs(os.path.dirname(output_image_path), exist_ok=True)
-    plt.savefig(output_image_path, dpi=100, bbox_inches='tight')
+    fig.savefig(output_image_path, dpi=100, bbox_inches='tight')
     plt.close(fig)  # Close the figure to free memory
     print(f"Spectrogram image saved to {output_image_path}")
+    return output_image_path
 
 def generate_spectrogram_visualization(audio_file, output_image_path, title="Spectrogram"):
     """
@@ -142,7 +144,7 @@ def generate_spectrogram_visualization(audio_file, output_image_path, title="Spe
         title (str): Title for the spectrogram plot. Default is "Spectrogram".
 
     Returns:
-        None
+        str: The path to the saved spectrogram image.
     """
     # Extract spectrogram
     S_db, sr = extract_spectrogram(audio_file)
@@ -151,7 +153,7 @@ def generate_spectrogram_visualization(audio_file, output_image_path, title="Spe
     fig = plot_spectrogram(S_db, sr, title=title)
     
     # Save spectrogram image
-    save_spectrogram_image(fig, output_image_path)
+    return save_spectrogram_image(fig, output_image_path)
 
 if __name__ == "__main__":
     # Example usage

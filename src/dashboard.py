@@ -9,8 +9,7 @@ from metrics import compute_compression_ratio, compute_snr
 from visualization import (generate_waveform_visualization, generate_spectrogram_visualization,
                           extract_waveform, plot_waveform, save_waveform_image,
                           extract_spectrogram, plot_spectrogram, save_spectrogram_image)
-import tempfile
-import shutil
+from utils import get_project_root, ensure_directories, save_uploaded_tempfile, format_bytes, cleanup_file
 import matplotlib.pyplot as plt
 
 # ============================================================================
@@ -24,7 +23,7 @@ import matplotlib.pyplot as plt
 # ============================================================================
 
 # Get project root
-project_root = os.path.dirname(os.path.dirname(__file__))
+project_root = get_project_root()
 
 # ============================================================================
 # STREAMLIT PAGE CONFIGURATION
@@ -103,14 +102,14 @@ with st.sidebar:
         - Nguyễn Lâm Tuấn Linh (202414637)
         
         **Repository:**  
-        [GitHub](https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding)
+        [GitHub](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding)
         """)
     
     # Quick links
     with st.expander("🔗 Quick Links", expanded=False):
         st.markdown("""
-        - [Project Repo](https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding)
-        - [Documentation](https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding#readme)
+        - [Project Repo](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding)
+        - [Documentation](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding#readme)
         """)
     
     # Settings section
@@ -188,8 +187,8 @@ if page_name == "Home":
     st.markdown("---")
     st.markdown("### 📚 Learn More")
     st.markdown("""
-    - Need help? Check the [documentation](https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding#readme)
-    - Report issues on [GitHub Issues](https://github.com/n9yn/Asssignment-1---Audio-Compression-and-Coding/issues)
+    - Need help? Check the [documentation](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding#readme)
+    - Report issues on [GitHub Issues](https://github.com/NguyenLamTuanLinh/Asssignment-1---Audio-Compression-and-Coding/issues)
     """)
 
 elif page_name == "Visualization":
@@ -220,14 +219,12 @@ elif page_name == "Visualization":
     
     with col2:
         if uploaded_file is not None:
-            file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
-            st.metric("File Size", f"{file_size_mb:.2f} MB")
+            file_size = len(uploaded_file.getvalue())
+            st.metric("File Size", format_bytes(file_size))
     
     if uploaded_file is not None:
         # Save uploaded file to temp
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            audio_file = tmp_file.name
+        audio_file = save_uploaded_tempfile(uploaded_file)
         
         st.success("✅ File uploaded successfully!")
         
@@ -306,9 +303,7 @@ elif page_name == "Visualization":
                         except Exception as e:
                             st.error(f"❌ Error: {str(e)}")
                         finally:
-                            # Cleanup
-                            if os.path.exists(audio_file):
-                                os.unlink(audio_file)
+                            cleanup_file(audio_file)
                 else:
                     st.warning("⚠️ Please enable 'Show waveform' to generate waveform visualization")
         
@@ -336,9 +331,7 @@ elif page_name == "Visualization":
                         except Exception as e:
                             st.error(f"❌ Error: {str(e)}")
                         finally:
-                            # Cleanup
-                            if os.path.exists(audio_file):
-                                os.unlink(audio_file)
+                            cleanup_file(audio_file)
                 else:
                     st.warning("⚠️ Please enable 'Show spectrogram' to generate spectrogram visualization")
     else:
@@ -368,11 +361,7 @@ else:  # Compression & Analysis page
                                     help="Upload WAV, MP3, or FLAC file")
 
     if uploaded_file is not None:
-        # Save uploaded file to temp
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            original_file = tmp_file.name
-
+        original_file = save_uploaded_tempfile(uploaded_file)
         st.sidebar.success("✓ File uploaded successfully!")
         
         st.markdown("---")
@@ -406,32 +395,31 @@ else:  # Compression & Analysis page
                 decoded_dir = os.path.join(output_dir, "decoded")
                 reports_dir = os.path.join(output_dir, "reports")
                 vis_dir = os.path.join(output_dir, "visualizations")
-                os.makedirs(encoded_dir, exist_ok=True)
-                os.makedirs(decoded_dir, exist_ok=True)
-                os.makedirs(reports_dir, exist_ok=True)
-                os.makedirs(vis_dir, exist_ok=True)
+                ensure_directories(encoded_dir, decoded_dir, reports_dir, vis_dir)
 
                 # Encode
                 with st.spinner("🔄 Encoding audio..."):
-                    encode_audio(original_file, encoded_dir, bitrates)
+                    encoded_files = encode_audio(original_file, encoded_dir, bitrates)
 
                 results = []
 
-                for bitrate in bitrates:
-                    encoded_file = os.path.join(encoded_dir, f"{os.path.splitext(os.path.basename(original_file))[0]}_{bitrate}kbps.mp3")
+                # Generate original audio visualizations once
+                orig_waveform = os.path.join(vis_dir, "original_waveform.png")
+                orig_spectrogram = os.path.join(vis_dir, "original_spectrogram.png")
+                generate_waveform_visualization(original_file, orig_waveform, title="Original Audio Waveform")
+                generate_spectrogram_visualization(original_file, orig_spectrogram, title="Original Audio Spectrogram")
+
+                # Process each encoded file
+                for bitrate, encoded_file in zip(bitrates, encoded_files):
                     decoded_file = os.path.join(decoded_dir, f"{os.path.splitext(os.path.basename(original_file))[0]}_{bitrate}kbps_decoded.wav")
+                    compression_ratio_file = os.path.join(reports_dir, f"compression_ratio_{bitrate}kbps.txt")
 
                     with st.spinner(f"🔄 Processing {bitrate} kbps..."):
-                        # Decode
-                        decode_audio(encoded_file, decoded_file)
-
-                        # Compute metrics
-                        compression_ratio_file = os.path.join(reports_dir, f"compression_ratio_{bitrate}kbps.txt")
-                        compute_compression_ratio(original_file, encoded_file, compression_ratio_file)
-
+                        decoded_file = decode_audio(encoded_file, decoded_file)
+                        compression_ratio = compute_compression_ratio(original_file, encoded_file, compression_ratio_file)
                         snr_value = compute_snr(original_file, decoded_file)
 
-                        # Generate visualizations for original and decoded with descriptive titles
+                        # Generate visualizations for original and decoded audio
                         orig_waveform = os.path.join(vis_dir, "original_waveform.png")
                         orig_spectrogram = os.path.join(vis_dir, "original_spectrogram.png")
                         dec_waveform = os.path.join(vis_dir, f"decoded_waveform_{bitrate}kbps.png")
@@ -442,10 +430,18 @@ else:  # Compression & Analysis page
                         generate_waveform_visualization(decoded_file, dec_waveform, title=f"Decoded Audio Waveform ({bitrate} kbps)")
                         generate_spectrogram_visualization(decoded_file, dec_spectrogram, title=f"Decoded Audio Spectrogram ({bitrate} kbps)")
 
+                        original_size = os.path.getsize(original_file)
+                        compressed_size = os.path.getsize(encoded_file)
+
                         results.append({
                             "bitrate": bitrate,
-                            "snr": snr_value,
+                            "encoded_file": encoded_file,
+                            "decoded_file": decoded_file,
                             "compression_ratio_file": compression_ratio_file,
+                            "compression_ratio": compression_ratio,
+                            "snr": snr_value,
+                            "original_size": original_size,
+                            "compressed_size": compressed_size,
                             "orig_waveform": orig_waveform,
                             "orig_spectrogram": orig_spectrogram,
                             "dec_waveform": dec_waveform,
@@ -455,39 +451,38 @@ else:  # Compression & Analysis page
                 # Display results
                 st.markdown("---")
                 st.header("📈 Analysis Results")
+                st.markdown("### 📊 Summary Table")
 
-                # Summary metrics with display options
-                st.markdown("### 📊 Summary")
-                cols = st.columns(len(results))
-                for idx, res in enumerate(results):
-                    with cols[idx]:
-                        # Conditional metric display based on settings
-                        if show_bitrate:
-                            st.metric(f"Bitrate", f"{res['bitrate']} kbps")
-                        if show_snr:
-                            st.metric("SNR (dB)", f"{res['snr']:.2f} dB")
+                summary_table = []
+                for res in results:
+                    row = {
+                        "Bitrate (kbps)": res["bitrate"],
+                        "SNR (dB)": f"{res['snr']:.2f}",
+                        "Compression Ratio": f"{res['compression_ratio']:.2f}",
+                        "Original Size (bytes)": f"{res['original_size']:,}",
+                        "Compressed Size (bytes)": f"{res['compressed_size']:,}"
+                    }
+                    summary_table.append(row)
 
-                # Detailed results
+                st.table(summary_table)
+
                 for res in results:
                     with st.expander(f"📌 Details - {res['bitrate']} kbps", expanded=False):
-                        # Metrics info with display options
                         col1, col2 = st.columns(2)
-                        
                         with col1:
                             if show_bitrate:
-                                st.subheader(f"🎚️ Bitrate: {res['bitrate']} kbps")
+                                st.write(f"**Bitrate:** {res['bitrate']} kbps")
                             if show_snr:
-                                st.metric("📈 SNR (dB)", f"{res['snr']:.2f}")
-                        
+                                st.write(f"**SNR:** {res['snr']:.2f} dB")
+                            st.write(f"**Original Size:** {res['original_size']:,} bytes")
+                            st.write(f"**Compressed Size:** {res['compressed_size']:,} bytes")
                         with col2:
                             if show_compression_ratio:
-                                st.subheader("📦 Compression Details")
+                                st.subheader("📦 Compression Report")
                                 with open(res['compression_ratio_file'], 'r') as f:
                                     st.text(f.read())
-                        
-                        st.markdown("---")
 
-                        # Visualizations
+                        st.markdown("---")
                         st.markdown("### Visualizations")
                         col1, col2 = st.columns(2)
                         with col1:
@@ -499,8 +494,13 @@ else:  # Compression & Analysis page
                             st.image(res['dec_waveform'], caption="Waveform", use_column_width=True)
                             st.image(res['dec_spectrogram'], caption="Spectrogram", use_column_width=True)
 
-                # Clean up temp file
-                os.unlink(original_file)
+                        st.markdown("---")
+                        st.write("**Files generated:**")
+                        st.write(f"Encoded: `{res['encoded_file']}`")
+                        st.write(f"Decoded: `{res['decoded_file']}`")
+                        st.write(f"Compression report: `{res['compression_ratio_file']}`")
+
+                cleanup_file(original_file)
                 st.success("✅ Processing complete!")
 
     else:
