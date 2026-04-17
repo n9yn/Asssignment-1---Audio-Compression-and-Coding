@@ -12,13 +12,13 @@ The system:
 - Generates waveform and spectrogram visualizations
 - Provides an interactive dashboard for analysis
 
-## Updates - Phase 3: Metrics & Analysis ✅
+## Updates - Phase 3: Metrics & Analysis 
 
 ### Completed Tasks:
-- ✅ **Generate Spectrogram Visualization** (Task breakdown:)
-  - ✅ **Extract Waveform**: Load audio data and extract waveform samples
-  - ✅ **Plot Waveform**: Create visual representation of audio waveform
-  - ✅ **Save Waveform Image**: Save plots to PNG files
+-  **Generate Spectrogram Visualization** (Task breakdown:)
+  -  **Extract Waveform**: Load audio data and extract waveform samples
+  -  **Plot Waveform**: Create visual representation of audio waveform
+  -  **Save Waveform Image**: Save plots to PNG files
 
 ### New Features in Visualization Module:
 - `extract_waveform()` - Extract audio time series data
