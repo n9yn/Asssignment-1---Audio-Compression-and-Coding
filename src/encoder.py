@@ -1,50 +1,70 @@
 import os
-import subprocess
-import shutil
+import soundfile as sf
+import librosa
+import numpy as np
 
-def encode_audio(input_file, output_dir, bitrates):
+def decode_audio(input_file, output_file):
     """
-    Encode audio file to multiple MP3 bitrates using FFmpeg.
+    Decode audio file to WAV format.
 
     Args:
-        input_file (str): Path to input audio file
-        output_dir (str): Output directory for encoded files
-        bitrates (list): List of bitrates in kbps
+        input_file (str): Path to encoded audio file
+        output_file (str): Path for decoded WAV output
 
     Returns:
-        list: Paths to encoded files
-
-    Raises:
-        RuntimeError: If FFmpeg fails or is not available
+        str: Path to decoded file
     """
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")
 
-    if not shutil.which('ffmpeg'):
-        raise RuntimeError("FFmpeg not found. Install from https://ffmpeg.org/download.html")
+    # Load and save as WAV
+    data, samplerate = sf.read(input_file)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    sf.write(output_file, data, samplerate, format='WAV', subtype='PCM_16')
 
-    os.makedirs(output_dir, exist_ok=True)
+    print(f"Decoded: {output_file}")
+    return output_file
 
-    output_files = []
-    base_name = os.path.splitext(os.path.basename(input_file))[0]
+def verify_audio_quality(original_file, decoded_file):
+    """
+    Compare original and decoded audio quality.
 
-    for bitrate in bitrates:
-        output_file = os.path.join(output_dir, f"{base_name}_{bitrate}kbps.mp3")
+    Args:
+        original_file (str): Path to original audio
+        decoded_file (str): Path to decoded audio
 
-        cmd = [
-            'ffmpeg', '-y', '-i', input_file,
-            '-b:a', f'{bitrate}k', output_file
-        ]
+    Returns:
+        dict: Quality metrics (snr, duration_match)
+    """
+    if not os.path.exists(original_file):
+        raise FileNotFoundError(f"Original file not found: {original_file}")
+    if not os.path.exists(decoded_file):
+        raise FileNotFoundError(f"Decoded file not found: {decoded_file}")
 
-        result = subprocess.run(
-            cmd, capture_output=True, text=True,
-            stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
-        )
+    # Load audio files
+    y_orig, sr_orig = librosa.load(original_file, sr=None)
+    y_dec, sr_dec = librosa.load(decoded_file, sr=None)
 
-        if result.returncode != 0:
-            raise RuntimeError(f"FFmpeg encoding failed for {bitrate} kbps")
+    # Resample if needed
+    if sr_orig != sr_dec:
+        y_dec = librosa.resample(y_dec, orig_sr=sr_dec, target_sr=sr_orig)
 
-        output_files.append(output_file)
-        print(f"Encoded to {bitrate} kbps: {output_file}")
+    # Trim to same length
+    min_len = min(len(y_orig), len(y_dec))
+    y_orig = y_orig[:min_len]
+    y_dec = y_dec[:min_len]
 
-    return output_files
+    # Calculate SNR
+    noise = y_orig - y_dec
+    signal_power = np.mean(y_orig ** 2)
+    noise_power = np.mean(noise ** 2)
+
+    if signal_power == 0 or noise_power == 0:
+        snr = float('inf') if noise_power == 0 else float('-inf')
+    else:
+        snr = 10 * np.log10(signal_power / noise_power)
+
+    return {
+        "snr": snr,
+        "duration_match": len(y_orig) == len(y_dec)
+    }
