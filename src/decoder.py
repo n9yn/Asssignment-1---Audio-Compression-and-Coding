@@ -68,5 +68,3 @@ def verify_audio_quality(original_file, decoded_file):
         "snr": snr,
         "duration_match": len(y_orig) == len(y_dec)
     }
-
- #TEST
