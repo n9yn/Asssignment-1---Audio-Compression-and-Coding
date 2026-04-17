@@ -5,6 +5,9 @@ from src.decoder import decode_audio
 from src.metrics import compute_compression_ratio, compare_snr
 from src.visualization import compare_waveforms, compare_spectrograms
 
+# Function: compute_signal_to_noise_ratio
+# Keeping the implementation from HEAD branch
+
 def compute_signal_to_noise_ratio(signal, noise):
     """
     Computes the Signal-to-Noise Ratio (SNR) in decibels (dB).
@@ -26,6 +29,9 @@ def compute_signal_to_noise_ratio(signal, noise):
     snr = 10 * np.log10(signal_power / noise_power)
 
     return snr
+
+# Function: validate_snr
+# Keeping the implementation from HEAD branch
 
 def validate_snr(signal, noise):
     """

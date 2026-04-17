@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import librosa
 
 def compute_compression_ratio(original_file, compressed_file, output_file):
     """
@@ -28,6 +29,46 @@ def compute_compression_ratio(original_file, compressed_file, output_file):
         f.write(f"Compression Ratio: {compression_ratio:.2f}\n")
 
     print(f"Compression ratio computed and stored in {output_file}")
+    return compression_ratio
+
+def compute_snr(original_file, compressed_file):
+    """
+    Computes the Signal-to-Noise Ratio (SNR) between the original and compressed audio files.
+
+    Args:
+        original_file (str): Path to the original audio file.
+        compressed_file (str): Path to the compressed audio file.
+
+    Returns:
+        float: The SNR value in dB.
+    """
+    # Load the audio files
+    y_orig, sr_orig = librosa.load(original_file, sr=None)
+    y_comp, sr_comp = librosa.load(compressed_file, sr=None)
+
+    # Ensure same sample rate
+    if sr_orig != sr_comp:
+        y_comp = librosa.resample(y_comp, orig_sr=sr_comp, target_sr=sr_orig)
+
+    # Trim to the same length
+    min_len = min(len(y_orig), len(y_comp))
+    y_orig = y_orig[:min_len]
+    y_comp = y_comp[:min_len]
+
+    # Compute noise as difference
+    noise = y_orig - y_comp
+
+    # Compute power
+    signal_power = np.mean(y_orig ** 2)
+    noise_power = np.mean(noise ** 2)
+
+    # Avoid division by zero
+    if noise_power == 0:
+        return float('inf')
+
+    # Compute SNR
+    snr = 10 * np.log10(signal_power / noise_power)
+    return snr
 
 def compare_snr(signal1, noise1, signal2, noise2):
     """

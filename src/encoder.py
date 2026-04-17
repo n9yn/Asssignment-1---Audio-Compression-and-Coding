@@ -11,7 +11,7 @@ def encode_audio(input_file, output_dir, bitrates):
         bitrates (list): List of bitrates to encode the audio file to (e.g., [64, 128, 256]).
 
     Returns:
-        None
+        list[str]: Paths to the encoded audio files.
     """
     # Load the audio file
     audio = AudioSegment.from_file(input_file)
@@ -19,11 +19,16 @@ def encode_audio(input_file, output_dir, bitrates):
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
+    output_files = []
+
     # Encode the audio file to each specified bitrate
     for bitrate in bitrates:
         output_file = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(input_file))[0]}_{bitrate}kbps.mp3")
         audio.export(output_file, format="mp3", bitrate=f"{bitrate}k")
+        output_files.append(output_file)
         print(f"Encoded {input_file} to {bitrate} kbps and saved as {output_file}")
+
+    return output_files
 
 if __name__ == "__main__":
     # Example usage
