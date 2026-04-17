@@ -233,63 +233,114 @@ elif page_name == "Visualization":
         
         st.markdown("---")
         
-        # Visualization options
+        # ===================================================================
+        # PHASE 4 TASK: DISPLAY OPTIONS
+        # ===================================================================
+        st.markdown("### ⚙️ Visualization Options")
+        
+        # Create columns for visualization options
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            show_waveform_checkbox = st.checkbox("🌊 Show waveform", value=True, key="show_waveform_check")
+        
+        with col2:
+            show_spectrogram_checkbox = st.checkbox("📊 Show spectrogram", value=True, key="show_spectrogram_check")
+        
+        with col3:
+            add_titles_checkbox = st.checkbox("📝 Add titles", value=True, key="add_titles_check")
+        
+        # Custom title inputs
+        st.markdown("---")
+        
+        if add_titles_checkbox:
+            st.markdown("#### 📌 Custom Titles")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                waveform_title = st.text_input(
+                    "Waveform Title",
+                    value="Audio Waveform",
+                    placeholder="Enter waveform title...",
+                    help="Custom title for the waveform visualization"
+                )
+            
+            with col2:
+                spectrogram_title = st.text_input(
+                    "Spectrogram Title",
+                    value="Audio Spectrogram",
+                    placeholder="Enter spectrogram title...",
+                    help="Custom title for the spectrogram visualization"
+                )
+        else:
+            waveform_title = "Waveform"
+            spectrogram_title = "Spectrogram"
+        
+        st.markdown("---")
+        
+        # Visualization buttons
         st.markdown("### Select Visualizations to Generate:")
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("🌊 Generate Waveform", key="waveform_btn", use_container_width=True):
-                with st.spinner("⏳ Extracting and processing waveform..."):
-                    try:
-                        # Task 1: Extract waveform
-                        y, sr = extract_waveform(audio_file)
-                        st.info(f"✓ Task 1 - Waveform extracted")
-                        st.caption(f"📊 {len(y):,} samples at {sr} Hz")
-                        
-                        # Task 2: Plot waveform
-                        fig = plot_waveform(y, sr)
-                        st.info("✓ Task 2 - Waveform plot generated")
-                        st.pyplot(fig, use_container_width=True)
-                        
-                        # Task 3: Save waveform
-                        output_dir = os.path.join(project_root, "output", "visualizations")
-                        output_path = os.path.join(output_dir, f"{os.path.splitext(uploaded_file.name)[0]}_waveform.png")
-                        save_waveform_image(fig, output_path)
-                        st.success(f"✓ Task 3 - Waveform saved")
-                        st.caption(f"📁 {output_path}")
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
-                    finally:
-                        # Cleanup
-                        if os.path.exists(audio_file):
-                            os.unlink(audio_file)
+            if st.button("🌊 Generate Waveform", key="waveform_btn", use_container_width=True, disabled=not show_waveform_checkbox):
+                if show_waveform_checkbox:
+                    with st.spinner("⏳ Extracting and processing waveform..."):
+                        try:
+                            # Task 1: Extract waveform
+                            y, sr = extract_waveform(audio_file)
+                            st.info(f"✓ Task 1 - Waveform extracted")
+                            st.caption(f"📊 {len(y):,} samples at {sr} Hz")
+                            
+                            # Task 2: Plot waveform with custom title
+                            fig = plot_waveform(y, sr, title=waveform_title)
+                            st.info("✓ Task 2 - Waveform plot generated")
+                            st.pyplot(fig, use_container_width=True)
+                            
+                            # Task 3: Save waveform
+                            output_dir = os.path.join(project_root, "output", "visualizations")
+                            output_path = os.path.join(output_dir, f"{os.path.splitext(uploaded_file.name)[0]}_waveform.png")
+                            save_waveform_image(fig, output_path)
+                            st.success(f"✓ Task 3 - Waveform saved")
+                            st.caption(f"📁 {output_path}")
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+                        finally:
+                            # Cleanup
+                            if os.path.exists(audio_file):
+                                os.unlink(audio_file)
+                else:
+                    st.warning("⚠️ Please enable 'Show waveform' to generate waveform visualization")
         
         with col2:
-            if st.button("📊 Generate Spectrogram", key="spectrogram_btn", use_container_width=True):
-                with st.spinner("⏳ Extracting and processing spectrogram..."):
-                    try:
-                        # Extract spectrogram
-                        S_db, sr = extract_spectrogram(audio_file)
-                        st.info(f"✓ Spectrogram extracted")
-                        st.caption(f"📊 Shape: {S_db.shape}")
-                        
-                        # Plot spectrogram
-                        fig = plot_spectrogram(S_db, sr)
-                        st.info("✓ Spectrogram plot generated")
-                        st.pyplot(fig, use_container_width=True)
-                        
-                        # Save spectrogram
-                        output_dir = os.path.join(project_root, "output", "visualizations")
-                        output_path = os.path.join(output_dir, f"{os.path.splitext(uploaded_file.name)[0]}_spectrogram.png")
-                        save_spectrogram_image(fig, output_path)
-                        st.success(f"✓ Spectrogram saved")
-                        st.caption(f"📁 {output_path}")
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
-                    finally:
-                        # Cleanup
-                        if os.path.exists(audio_file):
-                            os.unlink(audio_file)
+            if st.button("📊 Generate Spectrogram", key="spectrogram_btn", use_container_width=True, disabled=not show_spectrogram_checkbox):
+                if show_spectrogram_checkbox:
+                    with st.spinner("⏳ Extracting and processing spectrogram..."):
+                        try:
+                            # Extract spectrogram
+                            S_db, sr = extract_spectrogram(audio_file)
+                            st.info(f"✓ Spectrogram extracted")
+                            st.caption(f"📊 Shape: {S_db.shape}")
+                            
+                            # Plot spectrogram with custom title
+                            fig = plot_spectrogram(S_db, sr, title=spectrogram_title)
+                            st.info("✓ Spectrogram plot generated")
+                            st.pyplot(fig, use_container_width=True)
+                            
+                            # Save spectrogram
+                            output_dir = os.path.join(project_root, "output", "visualizations")
+                            output_path = os.path.join(output_dir, f"{os.path.splitext(uploaded_file.name)[0]}_spectrogram.png")
+                            save_spectrogram_image(fig, output_path)
+                            st.success(f"✓ Spectrogram saved")
+                            st.caption(f"📁 {output_path}")
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+                        finally:
+                            # Cleanup
+                            if os.path.exists(audio_file):
+                                os.unlink(audio_file)
+                else:
+                    st.warning("⚠️ Please enable 'Show spectrogram' to generate spectrogram visualization")
     else:
         st.info("👆 Start by uploading an audio file above")
 
@@ -370,16 +421,16 @@ else:  # Compression & Analysis page
 
                         snr_value = compute_snr(original_file, decoded_file)
 
-                        # Generate visualizations for original and decoded
+                        # Generate visualizations for original and decoded with descriptive titles
                         orig_waveform = os.path.join(vis_dir, "original_waveform.png")
                         orig_spectrogram = os.path.join(vis_dir, "original_spectrogram.png")
                         dec_waveform = os.path.join(vis_dir, f"decoded_waveform_{bitrate}kbps.png")
                         dec_spectrogram = os.path.join(vis_dir, f"decoded_spectrogram_{bitrate}kbps.png")
 
-                        generate_waveform_visualization(original_file, orig_waveform)
-                        generate_spectrogram_visualization(original_file, orig_spectrogram)
-                        generate_waveform_visualization(decoded_file, dec_waveform)
-                        generate_spectrogram_visualization(decoded_file, dec_spectrogram)
+                        generate_waveform_visualization(original_file, orig_waveform, title="Original Audio Waveform")
+                        generate_spectrogram_visualization(original_file, orig_spectrogram, title="Original Audio Spectrogram")
+                        generate_waveform_visualization(decoded_file, dec_waveform, title=f"Decoded Audio Waveform ({bitrate} kbps)")
+                        generate_spectrogram_visualization(decoded_file, dec_spectrogram, title=f"Decoded Audio Spectrogram ({bitrate} kbps)")
 
                         results.append({
                             "bitrate": bitrate,

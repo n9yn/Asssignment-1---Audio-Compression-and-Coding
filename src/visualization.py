@@ -19,20 +19,21 @@ def extract_waveform(audio_file):
     print(f"Waveform extracted from {audio_file}: {len(y)} samples at {sr} Hz")
     return y, sr
 
-def plot_waveform(y, sr):
+def plot_waveform(y, sr, title="Waveform"):
     """
     [TASK 2] Plots the extracted waveform data.
 
     Args:
         y (np.ndarray): Audio time series.
         sr (int): Sampling rate.
+        title (str): Title for the waveform plot. Default is "Waveform".
 
     Returns:
         matplotlib.figure.Figure: The figure object containing the plot.
     """
     fig = plt.figure(figsize=(12, 4))
     librosa.display.waveshow(y, sr=sr)
-    plt.title("Waveform")
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.xlabel("Time (s)")
     plt.ylabel("Amplitude")
     print("Waveform plot generated")
@@ -54,7 +55,7 @@ def save_waveform_image(fig, output_image_path):
     plt.close(fig)  # Close the figure to free memory
     print(f"Waveform image saved to {output_image_path}")
 
-def generate_waveform_visualization(audio_file, output_image_path):
+def generate_waveform_visualization(audio_file, output_image_path, title="Waveform"):
     """
     Generates a waveform visualization for the given audio file and saves it as an image.
     This is a convenience function that combines extract, plot, and save operations.
@@ -62,6 +63,7 @@ def generate_waveform_visualization(audio_file, output_image_path):
     Args:
         audio_file (str): Path to the audio file.
         output_image_path (str): Path to save the waveform image.
+        title (str): Title for the waveform plot. Default is "Waveform".
 
     Returns:
         None
@@ -70,7 +72,7 @@ def generate_waveform_visualization(audio_file, output_image_path):
     y, sr = extract_waveform(audio_file)
     
     # Task 2: Plot waveform
-    fig = plot_waveform(y, sr)
+    fig = plot_waveform(y, sr, title=title)
     
     # Task 3: Save waveform image
     save_waveform_image(fig, output_image_path)
@@ -92,13 +94,14 @@ def extract_spectrogram(audio_file):
     print(f"Spectrogram extracted from {audio_file}: shape {S_db.shape}")
     return S_db, sr
 
-def plot_spectrogram(S_db, sr):
+def plot_spectrogram(S_db, sr, title="Spectrogram"):
     """
     Plots the extracted spectrogram data.
 
     Args:
         S_db (np.ndarray): Spectrogram in dB scale.
         sr (int): Sampling rate.
+        title (str): Title for the spectrogram plot. Default is "Spectrogram".
 
     Returns:
         matplotlib.figure.Figure: The figure object containing the plot.
@@ -106,7 +109,7 @@ def plot_spectrogram(S_db, sr):
     fig = plt.figure(figsize=(12, 4))
     img = librosa.display.specshow(S_db, sr=sr, x_axis='time', y_axis='hz')
     plt.colorbar(img, format='%+2.0f dB')
-    plt.title("Spectrogram")
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.xlabel("Time (s)")
     plt.ylabel("Frequency (Hz)")
     print("Spectrogram plot generated")
@@ -128,7 +131,7 @@ def save_spectrogram_image(fig, output_image_path):
     plt.close(fig)  # Close the figure to free memory
     print(f"Spectrogram image saved to {output_image_path}")
 
-def generate_spectrogram_visualization(audio_file, output_image_path):
+def generate_spectrogram_visualization(audio_file, output_image_path, title="Spectrogram"):
     """
     Generates a spectrogram visualization for the given audio file and saves it as an image.
     This is a convenience function that combines extract, plot, and save operations.
@@ -136,6 +139,7 @@ def generate_spectrogram_visualization(audio_file, output_image_path):
     Args:
         audio_file (str): Path to the audio file.
         output_image_path (str): Path to save the spectrogram image.
+        title (str): Title for the spectrogram plot. Default is "Spectrogram".
 
     Returns:
         None
@@ -144,7 +148,7 @@ def generate_spectrogram_visualization(audio_file, output_image_path):
     S_db, sr = extract_spectrogram(audio_file)
     
     # Plot spectrogram
-    fig = plot_spectrogram(S_db, sr)
+    fig = plot_spectrogram(S_db, sr, title=title)
     
     # Save spectrogram image
     save_spectrogram_image(fig, output_image_path)
