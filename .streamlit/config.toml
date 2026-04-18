@@ -7,12 +7,7 @@ font = "sans serif"
 
 [client]
 showErrorDetails = true
-
-[logger]
-level = "info"
-
-[client.toolbarMode]
-mode = "minimal"
+toolbarMode = "minimal"
 
 [server]
 port = 8501
