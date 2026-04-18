@@ -1,5 +1,15 @@
 import os
 import streamlit as st
+
+# Fix for Streamlit config mismatch on some environments.
+# Streamlit expects client.toolbarMode to be a string, but some installs provide a dict.
+try:
+    toolbar_mode = st.config.get_option("client.toolbarMode")
+    if isinstance(toolbar_mode, dict):
+        st.config.set_option("client.toolbarMode", toolbar_mode.get("mode", "minimal"))
+except Exception:
+    pass
+
 import numpy as np
 import librosa
 import matplotlib.pyplot as plt
@@ -298,7 +308,7 @@ def page_compression():
                                 'Compressed Size': format_bytes(r['compressed_size'])
                             })
                         
-                        st.dataframe(results_data, use_container_width=True)
+                        st.dataframe(results_data, width="stretch")
                         
                         # Audio Playback Section
                         st.subheader("🎵 Audio Playback & Comparison")
