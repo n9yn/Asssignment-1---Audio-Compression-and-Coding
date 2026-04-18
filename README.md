@@ -19,7 +19,7 @@ This project implements a complete audio compression analysis system:
 4. **Compare speech vs music** performance across different audio types
 5. **Build interactive visualization dashboard** with Streamlit
 
-### 🎯 Live Demo Output
+### Live Demo Output
 - **Students load 2-3 audio files** through the web interface
 - **Run encoding live** with real-time progress tracking
 - **System displays bitrate, compression ratio, SNR** in interactive tables and charts
@@ -61,24 +61,24 @@ Open http://localhost:8501
 
 ## Key Features
 
-### 🎵 Audio Playback
+### Audio Playback
 - Listen to original vs compressed audio
 - Compare subjective quality at different bitrates
 - Side-by-side playback controls
 
-### 📊 Quality Metrics
+### Quality Metrics
 - **Signal-to-Noise Ratio (SNR)**:
   - **>30 dB**: Excellent quality (transparent)
   - **20-30 dB**: Good quality (minor artifacts)
   - **10-20 dB**: Acceptable quality (noticeable compression)
   - **<10 dB**: Poor quality (significant distortion)
 
-### 📈 Compression Ratio
+### Compression Ratio
 - Measures file size reduction
 - Higher ratios = better compression
 - Trade-off with audio quality
 
-### 🔍 Visual Analysis
+### Visual Analysis
 - **Waveform comparison**: Time-domain representation
 - **Spectrogram comparison**: Frequency-domain analysis
 - **Metrics visualization**: Charts showing quality vs bitrate trade-offs
